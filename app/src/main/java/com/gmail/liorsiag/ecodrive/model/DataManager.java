@@ -2,17 +2,21 @@ package com.gmail.liorsiag.ecodrive.model;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Environment;
 import android.util.Log;
 
 import com.gmail.liorsiag.ecodrive.controller.DrivingController;
 import com.gmail.liorsiag.ecodrive.controller.MainController;
 import com.gmail.liorsiag.ecodrive.controller.PrefsController;
 
+import java.io.File;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class DataManager {
     private final static String TAG = "DataManager";
-    private final static boolean TESTMODE=true;
+    private final static boolean TESTMODE = true;
 
     @SuppressLint("StaticFieldLeak")
     private static DataManager instance;
@@ -29,6 +33,13 @@ public class DataManager {
     private GpsHelper mGpsHelper;
     private ObdHelper mObdHelper;
 
+    private volatile boolean mIsInDrive = false;
+
+    private ArrayList<String[]> mGpsData;
+    private ArrayList<String[]> mObdData;
+
+    File mDir;
+
     public static DataManager instance() {
         if (instance == null)
             synchronized (DataManager.class) {
@@ -41,11 +52,12 @@ public class DataManager {
     public DataManager setContext(Context c) {
         mContext = c.getApplicationContext();
         if (!mIsInitialized) {
-            mGpsHelper=new GpsHelper(mContext);
-            if(TESTMODE)
-                mObdHelper= new TObdHelper(c);
+            mGpsHelper = new GpsHelper(mContext);
+            mDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "EcoDrive");
+            if (TESTMODE)
+                mObdHelper = new TObdHelper(c);
             else
-                mObdHelper=new IObdHelper();
+                mObdHelper = new IObdHelper();
         }
         mIsInitialized = true;
         return this;
@@ -79,10 +91,21 @@ public class DataManager {
 //        mPrefsC = null;
 //    }
 
+    public void startDrive() {
+        mIsInDrive = true;
+    }
+
+    public void stopDrive() {
+        mIsInDrive = false;
+        saveDrive();
+        mObdData=null;
+        mGpsData=null;
+    }
+
     public void setMainGpsListening(boolean status) {
         mIsMainGpsListening = status;
-        if(!mIsDrivingGpsListening)
-            if(status)
+        if (!mIsDrivingGpsListening)
+            if (status)
                 mGpsHelper.registerGpsListener();
             else
                 mGpsHelper.unregisterGpsListener();
@@ -90,38 +113,56 @@ public class DataManager {
 
     public void setDrivingGpsListening(boolean status) {
         mIsDrivingGpsListening = status;
-        if(!mIsMainGpsListening)
-            if(status)
+        if (!mIsMainGpsListening)
+            if (status)
                 mGpsHelper.registerGpsListener();
             else
                 mGpsHelper.unregisterGpsListener();
     }
 
-    void updateGps(double lat, double lon) {
-        if (mMainC!=null&&mIsMainGpsListening)
-            mMainC.updateGps(lat, lon);
-        if (mDrivingC!=null&&mIsDrivingGpsListening) {
-            //do stuff
-        }
+    void updateGps(String[] gpsCall) {
+        if (mIsInDrive) {
+            mGpsData.add(gpsCall);
+        } else if (mMainC != null && mIsMainGpsListening)
+            mMainC.updateGps(gpsCall);
     }
 
-    public String getGpsStatus(){
+    public String getGpsStatus() {
         return mGpsHelper.getGpsStatus();
     }
 
-    public void updateObd(String[] s){
-        Log.d(TAG, "updateObd: "+ Arrays.toString(s));
+    public void updateObd(String[] obdCall) {
+        if (mIsInDrive) {
+            mObdData.add(obdCall);
+        }
     }
 
-    public boolean connectToObd(){
+    public boolean connectToObd() {
         return mObdHelper.connect();
     }
 
-    public void disconnectFromObd(){
+    public void disconnectFromObd() {
         mObdHelper.disconnect();
     }
 
-    public boolean isObdConnected(){
+    public boolean isObdConnected() {
         return mObdHelper.isConnected();
+    }
+
+    public void createFolder() {
+        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+            if (!mDir.exists())
+                mDir.mkdirs();
+        }
+    }
+
+    public void saveDrive(){
+        createFolder();
+        saveFile(mGpsData, "GPS");
+        saveFile(mObdData, "OBD");
+    }
+
+    public void saveFile(ArrayList<String[]> data, String fileName){
+
     }
 }

@@ -26,7 +26,7 @@ public class GpsHelper {
         mLocationListener=new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                mDataManager.updateGps(location.getLatitude(), location.getLongitude());
+                mDataManager.updateGps(new String[]{String.valueOf(System.currentTimeMillis()), String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude())});
             }
 
             @Override

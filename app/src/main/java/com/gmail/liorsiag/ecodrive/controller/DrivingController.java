@@ -15,7 +15,7 @@ public class DrivingController {
         mView=view;
         mDataManager= DataManager.instance().setContext(mView.getApplicationContext());
         mDataManager.setDrivingGpsListening(true);
-        //set this in the datamanager
+        mDataManager.startDrive();
     }
 
     public void onDestroy(){
@@ -24,6 +24,7 @@ public class DrivingController {
     }
 
     public void endDrive(){
+        mDataManager.stopDrive();
         Intent intent = new Intent(mView, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         mView.startActivity(intent);
