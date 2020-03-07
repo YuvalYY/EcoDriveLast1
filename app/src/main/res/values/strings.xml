@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">EcoDrive</string>
+    <string name="current_obd_mode">Current OBD mode:</string>
+    <string name="fuel">FUEL</string>
+    <string name="maf">MAF</string>
+    <string name="rpm">RPM</string>
+    <string name="unknown">UNKNOWN</string>
+    <string name="settings">Settings</string>
+    <string name="car_model">Car Model</string>
+    <string name="engine_disp">Engine Displacement (in cc)</string>
+    <string name="voice_freq">Voice Frequency (in seconds)</string>
+    <string name="fuel_type">Fuel Type</string>
+    <string name="test_obd">Test OBD Type</string>
+    <string name="eliav">Eliav Mode</string>
+    <string name="press_to_enter">Press to enter information</string>
+    <string name="preference_file_name">PreferencesFile</string>
+    <string name="car_model_hint">Enter the car model</string>
+    <string name="voice_freq_hint">How often will the app say the speed</string>
+    <string name="engine_disp_hint">Enter the engine displacement of the car</string>
+    <string name="save">Save</string>
+    <string name="gps">GPS: </string>
+    <string name="obd">OBD: </string>
+    <string name="off">Off</string>
+    <string name="searching">Searching</string>
+    <string name="connected">Connected</string>
+    <string name="not_connected">Not connected</string>
+    <string name="start">Start</string>
+    <string name="start_confirm">"Are you sure you want to start?</string>
+    <string name="finish_confirm">Are you sure you want to stop?</string>
+    <string name="finish">Finish</string>
+    <string name="disconnect">Disconnect from OBD</string>
+    <string name="car_hint">Enter the route name</string>
+    <string name="voice">Use Voice</string>
+    <string name="connect">Connect to OBD</string>
+    <string name="route_model_hint">Choose the route model file:</string>
+</resources>

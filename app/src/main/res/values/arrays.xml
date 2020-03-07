@@ -1,0 +1,6 @@
+<resources>
+    <string-array name="fuelSpinnerItems">
+        <item>Gasoline</item>
+        <item>Diesel</item>
+    </string-array>
+</resources>
