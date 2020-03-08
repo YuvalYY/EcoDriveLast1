@@ -106,5 +106,4 @@ public class MainController {
             mView.setObdStatus(status);
         }
     }
-
 }

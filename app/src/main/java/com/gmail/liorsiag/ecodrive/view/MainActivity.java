@@ -99,6 +99,13 @@ public final class MainActivity extends AppCompatActivity {
                 mController.startPrefs();
             }
         });
+
+        findViewById(R.id.btn_delete).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getApplicationContext().getSharedPreferences("EcoDrive",MODE_PRIVATE).edit().clear().commit();
+            }
+        });
     }
 
     public void setRouteName(String value) {

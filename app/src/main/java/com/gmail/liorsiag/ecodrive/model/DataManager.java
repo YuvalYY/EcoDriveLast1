@@ -4,15 +4,21 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.gmail.liorsiag.ecodrive.controller.DrivingController;
 import com.gmail.liorsiag.ecodrive.controller.MainController;
 import com.gmail.liorsiag.ecodrive.controller.PrefsController;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 public class DataManager {
     private final static String TAG = "DataManager";
@@ -32,11 +38,14 @@ public class DataManager {
 
     private GpsHelper mGpsHelper;
     private ObdHelper mObdHelper;
+    private PrefsHelper mPrefsHelper;
 
     private volatile boolean mIsInDrive = false;
 
     private ArrayList<String[]> mGpsData;
     private ArrayList<String[]> mObdData;
+
+    private String mFileName;
 
     File mDir;
 
@@ -52,6 +61,7 @@ public class DataManager {
     public DataManager setContext(Context c) {
         mContext = c.getApplicationContext();
         if (!mIsInitialized) {
+            mPrefsHelper=new PrefsHelper(mContext);
             mGpsHelper = new GpsHelper(mContext);
             mDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "EcoDrive");
             if (TESTMODE)
@@ -92,14 +102,18 @@ public class DataManager {
 //    }
 
     public void startDrive() {
+        mObdData = new ArrayList<>();
+        mGpsData = new ArrayList<>();
+        mFileName = "ff " + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date()); //get route name and car model from pref manager, and get date
         mIsInDrive = true;
+
     }
 
     public void stopDrive() {
         mIsInDrive = false;
         saveDrive();
-        mObdData=null;
-        mGpsData=null;
+        mObdData = null;
+        mGpsData = null;
     }
 
     public void setMainGpsListening(boolean status) {
@@ -132,9 +146,9 @@ public class DataManager {
     }
 
     public void updateObd(String[] obdCall) {
-        if (mIsInDrive) {
+        if (mIsInDrive)
             mObdData.add(obdCall);
-        }
+        Log.d(TAG, "updateObd: "+obdCall[1]);
     }
 
     public boolean connectToObd() {
@@ -156,13 +170,74 @@ public class DataManager {
         }
     }
 
-    public void saveDrive(){
+    public void saveDrive() {
         createFolder();
-        saveFile(mGpsData, "GPS");
-        saveFile(mObdData, "OBD");
+        saveFile(mGpsData, mFileName + " GPS.csv");
+        saveFile(mObdData, mFileName + " OBD.csv");
+        Toast.makeText(mContext, "Finished saving", Toast.LENGTH_SHORT).show();
     }
 
-    public void saveFile(ArrayList<String[]> data, String fileName){
-
+    public void saveFile(ArrayList<String[]> data, String fileName) {
+        try {
+            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                File file = new File(mDir, fileName + " " + mFileName);
+                PrintWriter writer = new PrintWriter(new FileOutputStream(file));
+                for (String[] row : data) {
+                    for (int i = 0; i < row.length - 1; i++)
+                        writer.print(row[i] + ",");
+                    writer.println(row[row.length - 1]);
+                }
+                writer.flush();
+                writer.close();
+            } else {
+                Toast.makeText(mContext, "Saving failed. External memory unavailable", Toast.LENGTH_SHORT).show();
+            }
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, "Error occurred while saving file");
+            e.printStackTrace();
+        }
     }
+
+    public void savePrefs(String carModel,String voiceFreq,String engineDisp,int fuelType){
+        if(carModel!=null&&!carModel.isEmpty())
+            mPrefsHelper.setCarModel(carModel);
+        if(voiceFreq!=null&&!voiceFreq.isEmpty())
+            mPrefsHelper.setVoiceFreq(Integer.parseInt(voiceFreq));
+        if(engineDisp!=null&&!engineDisp.isEmpty())
+            mPrefsHelper.setEngineDisp(Integer.parseInt(engineDisp));
+        mPrefsHelper.setFuelTypePosition(fuelType);
+    }
+
+    public String getObdType(){
+        return mPrefsHelper.getObdType();
+    }
+
+    public String getCarModel(){
+        return mPrefsHelper.getCarModel();
+    }
+
+    public int getVoiceFreq(){
+        return mPrefsHelper.getVoiceFreq();
+    }
+
+    public int getEngineDisp(){
+        return mPrefsHelper.getEngineDisp();
+    }
+
+    public int getFuelTypePos(){
+        return mPrefsHelper.getFuelTypePos();
+    }
+
+    public String getRouteName(){
+        return mPrefsHelper.getRouteName();
+    }
+
+    public void setEliavPrefs(){
+        mPrefsHelper.setObdType("MAF");
+        mPrefsHelper.setCarModel("Some car");
+        mPrefsHelper.setVoiceFreq(5);
+        mPrefsHelper.setEngineDisp(1999);
+        mPrefsHelper.setFuelTypePosition(0);
+    }
+
 }
