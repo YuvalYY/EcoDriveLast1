@@ -59,7 +59,7 @@ public final class PrefsActivity extends AppCompatActivity {
         findViewById(R.id.btn_test_obd).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                //call the test
+                mController.testAndSetObdType();
             }
         });
         findViewById(R.id.btn_eliav).setOnClickListener(new OnClickListener() {

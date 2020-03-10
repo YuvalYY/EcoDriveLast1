@@ -25,4 +25,9 @@ public class IObdHelper implements ObdHelper {
     public void stopRecording() {
 
     }
+
+    @Override
+    public String testObdType() {
+        return null;
+    }
 }

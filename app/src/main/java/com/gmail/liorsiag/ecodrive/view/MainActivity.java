@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.view.View.OnClickListener;
 
@@ -22,6 +23,7 @@ public final class MainActivity extends AppCompatActivity {
 
     TextView mGpsStatus,mObdStatus;
     Button mStartDrive,mObdConnect,mPrefs;
+    EditText mRouteName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +42,7 @@ public final class MainActivity extends AppCompatActivity {
         mObdConnect=findViewById(R.id.btn_obd);
         mObdStatus=findViewById(R.id.text_obd);
         mPrefs=findViewById(R.id.btn_settings);
+        mRouteName=findViewById(R.id.editt_route_name);
     }
 
     @Override
@@ -110,6 +113,10 @@ public final class MainActivity extends AppCompatActivity {
 
     public void setRouteName(String value) {
 
+    }
+
+    public String getRouteName(){
+        return mRouteName.getText().toString();
     }
 
     public void setGpsStatus(String value) {

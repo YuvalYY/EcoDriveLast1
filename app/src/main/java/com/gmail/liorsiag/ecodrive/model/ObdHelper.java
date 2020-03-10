@@ -10,4 +10,6 @@ public interface ObdHelper {
     void startRecording();
 
     void stopRecording();
+
+    String testObdType();
 }

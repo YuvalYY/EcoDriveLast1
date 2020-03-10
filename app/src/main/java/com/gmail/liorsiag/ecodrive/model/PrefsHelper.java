@@ -67,4 +67,15 @@ public class PrefsHelper {
     public String getRouteName(){
         return mSharedPrefs.getString("routeName",null);
     }
+
+    public boolean arePrefsSet(){
+        if(getCarModel()==null) //if the user didn't specify car model
+            return false;
+        String obdType=getObdType();
+        if(obdType==null) //if he didn't do obd test
+            return false;
+        if(obdType.equals("FUEL")||obdType.equals("MAF")) //0 is the default fuel position so no need to check
+            return true;
+        return getEngineDisp()!=-1; //since he is now in RPM type, just check if he specified the engine displacement
+    }
 }

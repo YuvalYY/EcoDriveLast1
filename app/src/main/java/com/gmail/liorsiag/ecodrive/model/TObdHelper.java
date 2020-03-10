@@ -15,6 +15,7 @@ public class TObdHelper implements ObdHelper {
 
     private static final String TAG = "TObdHelper";
     private static final String FILENAME = "obd";
+    private static final String OBDTYPE="MAF";
 
     private ArrayList<String[]> mData;
     private Thread mThread;
@@ -73,6 +74,11 @@ public class TObdHelper implements ObdHelper {
         mStop = true;
         mThread.interrupt();
         mThread = null;
+    }
+
+    @Override
+    public String testObdType() {
+        return OBDTYPE;
     }
 
     private ArrayList<String[]> loadFile() {

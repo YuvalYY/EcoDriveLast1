@@ -163,6 +163,12 @@ public class DataManager {
         return mObdHelper.isConnected();
     }
 
+    public void testAndSetObdType(){
+        String type=mObdHelper.testObdType();
+        mPrefsHelper.setObdType(type);
+        Toast.makeText(mContext, "Test success: "+type, Toast.LENGTH_SHORT).show();
+    }
+
     public void createFolder() {
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             if (!mDir.exists())
@@ -240,4 +246,11 @@ public class DataManager {
         mPrefsHelper.setFuelTypePosition(0);
     }
 
+    public boolean arePrefsSet(){
+        return mPrefsHelper.arePrefsSet();
+    }
+
+    public boolean isGpsActive(){
+        return mGpsHelper.isActive();
+    }
 }

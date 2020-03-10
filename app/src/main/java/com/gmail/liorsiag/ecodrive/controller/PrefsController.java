@@ -32,12 +32,13 @@ public class PrefsController {
 
     }
 
-    public void testAndSetObd(){
-
-    }
-
     public void setEliavPrefs(){
         mDataManager.setEliavPrefs();
+        loadPrefs();
+    }
+
+    public void testAndSetObdType(){
+        mDataManager.testAndSetObdType();
         loadPrefs();
     }
 }

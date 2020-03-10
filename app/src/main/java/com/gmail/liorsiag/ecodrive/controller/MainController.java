@@ -2,6 +2,7 @@ package com.gmail.liorsiag.ecodrive.controller;
 
 import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.gmail.liorsiag.ecodrive.R;
 import com.gmail.liorsiag.ecodrive.model.DataManager;
@@ -56,11 +57,28 @@ public class MainController {
 
     //Create a driving activity and end the main one
     public void startDrive() {
-        //test parameters which allows driving
-        Intent intent = new Intent(mView, DrivingActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        mView.startActivity(intent);
-        mView.finish();
+        //put this inside a dialog or somehting
+        if(mDataManager.arePrefsSet()) {
+            mView.getRouteName();
+            if(!mView.getRouteName().isEmpty())
+                if(!mDataManager.getGpsStatus().equals("Off")&&mDataManager.isGpsActive())
+                    if(mDataManager.isObdConnected()){
+                        Intent intent = new Intent(mView, DrivingActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        mView.startActivity(intent);
+                        mView.finish();
+                    }
+                    else
+                        Toast.makeText(mView, "Connect to OBD", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(mView, "Turn GPS on", Toast.LENGTH_SHORT).show();
+            else
+                Toast.makeText(mView, "Set route name", Toast.LENGTH_SHORT).show();
+        }
+
+        else
+            Toast.makeText(mView, "Set your preferences", Toast.LENGTH_SHORT).show();
+        //dialog box as well
     }
 
     //

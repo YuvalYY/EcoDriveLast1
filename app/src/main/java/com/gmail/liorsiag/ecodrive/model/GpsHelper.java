@@ -46,6 +46,10 @@ public class GpsHelper {
         };
     }
 
+    public boolean isActive(){
+        return mIsActive;
+    }
+
     public String getGpsStatus(){
         LocationManager lm = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
         if (lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER))
