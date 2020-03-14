@@ -43,6 +43,7 @@ public final class MainActivity extends AppCompatActivity {
         mObdStatus=findViewById(R.id.text_obd);
         mPrefs=findViewById(R.id.btn_settings);
         mRouteName=findViewById(R.id.editt_route_name);
+        mController.updateRouteName();
     }
 
     @Override
@@ -112,7 +113,7 @@ public final class MainActivity extends AppCompatActivity {
     }
 
     public void setRouteName(String value) {
-
+        mRouteName.setText(value);
     }
 
     public String getRouteName(){
@@ -130,6 +131,7 @@ public final class MainActivity extends AppCompatActivity {
     public void setObdButtonText(String value) {
         mObdConnect.setText(value);
     }
+
 
     public void setSpinnerEntries(String[] entries) {
 

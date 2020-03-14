@@ -36,6 +36,12 @@ public final class PrefsActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        setEnabled();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
     }
@@ -74,6 +80,12 @@ public final class PrefsActivity extends AppCompatActivity {
                 mFuelType.performClick();
             }
         });
+    }
+
+    public void setEnabled(){
+        boolean obdConnected=mController.isObdConnected();
+        findViewById(R.id.btn_test_obd).setEnabled(obdConnected);
+        findViewById(R.id.btn_eliav).setEnabled(!obdConnected);
     }
 
     public void savePrefs(){

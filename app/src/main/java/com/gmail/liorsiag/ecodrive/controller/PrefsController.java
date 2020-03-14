@@ -41,4 +41,8 @@ public class PrefsController {
         mDataManager.testAndSetObdType();
         loadPrefs();
     }
+
+    public boolean isObdConnected(){
+        return mDataManager.isObdConnected();
+    }
 }

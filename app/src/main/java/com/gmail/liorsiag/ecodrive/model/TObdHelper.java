@@ -15,7 +15,7 @@ public class TObdHelper implements ObdHelper {
 
     private static final String TAG = "TObdHelper";
     private static final String FILENAME = "obd";
-    private static final String OBDTYPE="MAF";
+    private static final String OBDTYPE = "MAF";
 
     private ArrayList<String[]> mData;
     private Thread mThread;
@@ -72,8 +72,10 @@ public class TObdHelper implements ObdHelper {
     @Override
     public void stopRecording() {
         mStop = true;
-        mThread.interrupt();
-        mThread = null;
+        if (mThread != null) {
+            mThread.interrupt();
+            mThread = null;
+        }
     }
 
     @Override

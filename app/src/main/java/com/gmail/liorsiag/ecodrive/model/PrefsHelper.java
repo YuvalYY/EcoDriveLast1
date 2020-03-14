@@ -16,6 +16,15 @@ public class PrefsHelper {
         return null;
     }
 
+    public double[] getFuelInfo(){
+        int pos=getFuelTypePos();
+        if(pos==0)
+            return new double[]{14.7, 820};
+        else if(pos==1)
+            return new double[]{14.5, 750};
+        return null;
+    }
+
     public PrefsHelper(Context c){
         mSharedPrefs=c.getSharedPreferences(mFileName,Context.MODE_PRIVATE);
     }
@@ -76,6 +85,6 @@ public class PrefsHelper {
             return false;
         if(obdType.equals("FUEL")||obdType.equals("MAF")) //0 is the default fuel position so no need to check
             return true;
-        return getEngineDisp()!=-1; //since he is now in RPM type, just check if he specified the engine displacement
+        return getEngineDisp()!=-1; //since the app is now in RPM type, just check if he specified the engine displacement
     }
 }

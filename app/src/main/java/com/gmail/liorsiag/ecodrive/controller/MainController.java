@@ -60,7 +60,8 @@ public class MainController {
         //put this inside a dialog or somehting
         if(mDataManager.arePrefsSet()) {
             mView.getRouteName();
-            if(!mView.getRouteName().isEmpty())
+            if(!mView.getRouteName().isEmpty()){
+                mDataManager.saveRouteName(mView.getRouteName());
                 if(!mDataManager.getGpsStatus().equals("Off")&&mDataManager.isGpsActive())
                     if(mDataManager.isObdConnected()){
                         Intent intent = new Intent(mView, DrivingActivity.class);
@@ -72,6 +73,8 @@ public class MainController {
                         Toast.makeText(mView, "Connect to OBD", Toast.LENGTH_SHORT).show();
                 else
                     Toast.makeText(mView, "Turn GPS on", Toast.LENGTH_SHORT).show();
+            }
+
             else
                 Toast.makeText(mView, "Set route name", Toast.LENGTH_SHORT).show();
         }
@@ -123,5 +126,11 @@ public class MainController {
             mView.setObdButtonText(button);
             mView.setObdStatus(status);
         }
+    }
+
+    public void updateRouteName() {
+        String v=mDataManager.getRouteName();
+        if(v!=null)
+            mView.setRouteName(v);
     }
 }

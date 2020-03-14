@@ -3,6 +3,7 @@ package com.gmail.liorsiag.ecodrive.model;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -24,30 +25,46 @@ public class DataManager {
     private final static String TAG = "DataManager";
     private final static boolean TESTMODE = true;
 
+    //General Data
     @SuppressLint("StaticFieldLeak")
     private static DataManager instance;
     private Context mContext;
     private boolean mIsInitialized = false;
 
+    //Controllers
     private MainController mMainC;
     private DrivingController mDrivingC;
-//    private PrefsController mPrefsC;
 
+    //Who is listening to GPS updates
     private boolean mIsMainGpsListening = false;
     private boolean mIsDrivingGpsListening = false;
 
+    //Helpers
     private GpsHelper mGpsHelper;
     private ObdHelper mObdHelper;
     private PrefsHelper mPrefsHelper;
 
+    //Drive related variables
     private volatile boolean mIsInDrive = false;
-
     private ArrayList<String[]> mGpsData;
     private ArrayList<String[]> mObdData;
-
     private String mFileName;
+    private Runnable mScreenUpdate;
+    private Handler mHandler;
 
-    File mDir;
+    //Most recent drive data
+    private double mSpeed = 0;
+    private double mFuel = 0;
+    private double mMaf = 0;
+    private double mRpm = 0;
+    private double mMap = 0;
+    private double mIat = 0;
+
+    private double[] mFuelInfo;
+    private double mEngineDisp=0;
+
+    //EcoDrive directory
+    private File mDir;
 
     public static DataManager instance() {
         if (instance == null)
@@ -61,13 +78,13 @@ public class DataManager {
     public DataManager setContext(Context c) {
         mContext = c.getApplicationContext();
         if (!mIsInitialized) {
-            mPrefsHelper=new PrefsHelper(mContext);
+            mPrefsHelper = new PrefsHelper(mContext);
             mGpsHelper = new GpsHelper(mContext);
             mDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "EcoDrive");
             if (TESTMODE)
                 mObdHelper = new TObdHelper(c);
             else
-                mObdHelper = new IObdHelper();
+                mObdHelper = new IObdHelper(mContext, getObdType());
         }
         mIsInitialized = true;
         return this;
@@ -76,15 +93,12 @@ public class DataManager {
     public void setMainController(MainController mc) {
         Log.d(TAG, "setMainController: ");
         mMainC = mc;
+        createFolder();
     }
 
     public void setDrivingController(DrivingController dc) {
         mDrivingC = dc;
     }
-
-//    public void setPrefsController(PrefsController pc) {
-//        mPrefsC=pc;
-//    }
 
     public void onMainDestroy() {
         Log.d(TAG, "onMainDestroy: ");
@@ -97,20 +111,19 @@ public class DataManager {
         //register/unregister things
     }
 
-//    public void onPrefsDestroy() {
-//        mPrefsC = null;
-//    }
-
     public void startDrive() {
-        mObdData = new ArrayList<>();
+        mObdData = new ArrayList<>(); //consider putting initial capacity
         mGpsData = new ArrayList<>();
-        mFileName = "ff " + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date()); //get route name and car model from pref manager, and get date
+        mFileName = mPrefsHelper.getCarModel() + " " + mPrefsHelper.getRouteName() + " " + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date()); //get route name and car model from pref manager, and get date
+        createAndRegisterUpdateScreen();
         mIsInDrive = true;
-
+        //here comes the update screen callback from handler
     }
 
     public void stopDrive() {
+        //remove update screen callback from handler
         mIsInDrive = false;
+        mHandler.removeCallbacks(mScreenUpdate);
         saveDrive();
         mObdData = null;
         mGpsData = null;
@@ -146,9 +159,27 @@ public class DataManager {
     }
 
     public void updateObd(String[] obdCall) {
-        if (mIsInDrive)
-            mObdData.add(obdCall);
-        Log.d(TAG, "updateObd: "+obdCall[1]);
+        Log.d(TAG, "updateObd: "+obdCall[1].charAt(0));
+        switch (obdCall[1].charAt(0)) {
+            case 'V': //Vehicle Speed
+                mSpeed = Double.parseDouble(obdCall[2]);
+                break;
+            case 'F': //Fuel consumption rate
+                mFuel = Double.parseDouble(obdCall[2]);
+                break;
+            case 'M': //Mass Air Flow
+                mMaf = Double.parseDouble(obdCall[2]);
+                break;
+            case 'E': //Engine RPM
+                mRpm = Double.parseDouble(obdCall[2]);
+                break;
+            case 'A': //Air Intake Temperature
+                mIat = Double.parseDouble(obdCall[2]);
+                break;
+            case 'I': //Intake Manifold Pressure
+                mMap = Double.parseDouble(obdCall[2]);
+                break;
+        }
     }
 
     public boolean connectToObd() {
@@ -163,10 +194,23 @@ public class DataManager {
         return mObdHelper.isConnected();
     }
 
-    public void testAndSetObdType(){
-        String type=mObdHelper.testObdType();
-        mPrefsHelper.setObdType(type);
-        Toast.makeText(mContext, "Test success: "+type, Toast.LENGTH_SHORT).show();
+    public void testAndSetObdType() {
+        if (mObdHelper.isConnected()) {
+            mObdHelper.stopRecording();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+            }
+            String type = mObdHelper.testObdType();
+            if (type != null) {
+                mPrefsHelper.setObdType(type);
+                Toast.makeText(mContext, "Test success: " + type, Toast.LENGTH_SHORT).show();
+            }
+            mObdHelper.startRecording();
+        } else {
+            Toast.makeText(mContext, "Connect to the OBD first", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     public void createFolder() {
@@ -186,7 +230,7 @@ public class DataManager {
     public void saveFile(ArrayList<String[]> data, String fileName) {
         try {
             if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                File file = new File(mDir, fileName + " " + mFileName);
+                File file = new File(mDir, fileName);
                 PrintWriter writer = new PrintWriter(new FileOutputStream(file));
                 for (String[] row : data) {
                     for (int i = 0; i < row.length - 1; i++)
@@ -204,41 +248,50 @@ public class DataManager {
         }
     }
 
-    public void savePrefs(String carModel,String voiceFreq,String engineDisp,int fuelType){
-        if(carModel!=null&&!carModel.isEmpty())
+    public void savePrefs(String carModel, String voiceFreq, String engineDisp, int fuelType) {
+        if (carModel != null && !carModel.isEmpty())
             mPrefsHelper.setCarModel(carModel);
-        if(voiceFreq!=null&&!voiceFreq.isEmpty())
+        if (voiceFreq != null && !voiceFreq.isEmpty())
             mPrefsHelper.setVoiceFreq(Integer.parseInt(voiceFreq));
-        if(engineDisp!=null&&!engineDisp.isEmpty())
+        if (engineDisp != null && !engineDisp.isEmpty())
             mPrefsHelper.setEngineDisp(Integer.parseInt(engineDisp));
         mPrefsHelper.setFuelTypePosition(fuelType);
     }
 
-    public String getObdType(){
+    public void saveRouteName(String value) {
+        if (value != null && !value.isEmpty())
+            mPrefsHelper.setRouteName(value);
+    }
+
+    public void saveObdType(String value) {
+        mPrefsHelper.setObdType(value);
+    }
+
+    public String getObdType() {
         return mPrefsHelper.getObdType();
     }
 
-    public String getCarModel(){
+    public String getCarModel() {
         return mPrefsHelper.getCarModel();
     }
 
-    public int getVoiceFreq(){
+    public int getVoiceFreq() {
         return mPrefsHelper.getVoiceFreq();
     }
 
-    public int getEngineDisp(){
+    public int getEngineDisp() {
         return mPrefsHelper.getEngineDisp();
     }
 
-    public int getFuelTypePos(){
+    public int getFuelTypePos() {
         return mPrefsHelper.getFuelTypePos();
     }
 
-    public String getRouteName(){
+    public String getRouteName() {
         return mPrefsHelper.getRouteName();
     }
 
-    public void setEliavPrefs(){
+    public void setEliavPrefs() {
         mPrefsHelper.setObdType("MAF");
         mPrefsHelper.setCarModel("Some car");
         mPrefsHelper.setVoiceFreq(5);
@@ -246,11 +299,61 @@ public class DataManager {
         mPrefsHelper.setFuelTypePosition(0);
     }
 
-    public boolean arePrefsSet(){
+    public boolean arePrefsSet() {
         return mPrefsHelper.arePrefsSet();
     }
 
-    public boolean isGpsActive(){
+    public boolean isGpsActive() {
         return mGpsHelper.isActive();
+    }
+
+    private void createAndRegisterUpdateScreen() {
+        mHandler = new Handler();
+        final int delay = getVoiceFreq()*1000;
+        mEngineDisp=getEngineDisp();
+        String obdType = getObdType();
+        mFuelInfo=mPrefsHelper.getFuelInfo();
+        if (obdType.equals("FUEL")) {
+            mScreenUpdate = new Runnable() {
+                @Override
+                public void run() {
+                    mDrivingC.updateFuelConsumption(mFuel);
+                    mDrivingC.updateActualSpeed(String.valueOf(mSpeed));
+                    mHandler.postDelayed(this, delay);
+                }
+            };
+        } else if (obdType.equals("MAF")) {
+            mScreenUpdate = new Runnable() {
+                @Override
+                public void run() {
+                    calcFuel();
+                    mDrivingC.updateFuelConsumption(mFuel);
+                    mDrivingC.updateActualSpeed(String.valueOf(mSpeed));
+                    mHandler.postDelayed(this, delay);
+                }
+            };
+        } else {
+            mScreenUpdate = new Runnable() {
+                @Override
+                public void run() {
+                    calcMaf();
+                    calcFuel();
+                    mDrivingC.updateFuelConsumption(mFuel);
+                    mDrivingC.updateActualSpeed(String.valueOf(mSpeed));
+                    mHandler.postDelayed(this, delay);
+                }
+            };
+        }
+        mHandler.post(mScreenUpdate);
+    }
+
+    public void calcMaf() {
+        double iat = mIat + 273.15;
+        double imap = mRpm * mMap / iat / 2;
+        mMaf= ((imap / 60) * (0.8) * mEngineDisp * (28.97 / 8.314)) / 1000;
+    }
+
+    public void calcFuel() {
+        mFuel = (mMaf * 3600) / (mFuelInfo[0] * mFuelInfo[1]);
     }
 }
