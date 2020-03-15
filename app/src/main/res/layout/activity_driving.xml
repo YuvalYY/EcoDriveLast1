@@ -9,9 +9,8 @@
 
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -32,16 +31,18 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
                     android:text="Speed:"
-                    android:textSize="25sp"
+                    android:textSize="30sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/text_actual_speed"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="60 km/h"
-                    android:textSize="30sp" />
+                    android:gravity="center"
+                    android:text="110 km/h"
+                    android:textSize="40sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -53,26 +54,20 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Consumption:"
-                    android:textSize="25sp"
+                    android:gravity="center"
+                    android:text="Fuel Cons:"
+                    android:textSize="30sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/text_fuel_consumption"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
                     android:text="3.4123 l/h"
-                    android:textSize="30sp" />
+                    android:textSize="40sp" />
             </LinearLayout>
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/text_desired_speed"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="60"
-            android:textSize="200sp" />
 
     </LinearLayout>
 
@@ -81,7 +76,21 @@
         android:id="@+id/button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Button"
-        tools:layout_editor_absoluteY="344dp"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        android:text="Stop Drive"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/text_desired_speed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:gravity="center"
+        android:text="60"
+        android:textSize="200sp" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

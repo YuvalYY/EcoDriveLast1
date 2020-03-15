@@ -31,8 +31,6 @@ import java.util.Set;
 public class IObdHelper implements ObdHelper {
 
     private boolean mIsConnected = false;
-    private String obdType;
-
     private Thread mThread;
     private DataManager mDataManager;
     private volatile boolean mStop;
@@ -86,7 +84,6 @@ public class IObdHelper implements ObdHelper {
     @Override
     public void startRecording() {
         mStop = false;
-        Toast.makeText(mContext, mDataManager.getObdType(), Toast.LENGTH_SHORT).show();
         if (mDataManager.getObdType() != null)
             mObdType = mDataManager.getObdType();
         setCommands();

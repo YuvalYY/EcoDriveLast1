@@ -159,7 +159,8 @@ public class DataManager {
     }
 
     public void updateObd(String[] obdCall) {
-        Log.d(TAG, "updateObd: "+obdCall[1].charAt(0));
+        if(mIsInDrive)
+            mObdData.add(obdCall);
         switch (obdCall[1].charAt(0)) {
             case 'V': //Vehicle Speed
                 mSpeed = Double.parseDouble(obdCall[2]);
