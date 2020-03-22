@@ -23,7 +23,7 @@ import java.util.Date;
 
 public class DataManager {
     private final static String TAG = "DataManager";
-    private final static boolean TESTMODE = true;
+    private final static boolean TESTMODE = false;
 
     //General Data
     @SuppressLint("StaticFieldLeak")
@@ -157,7 +157,6 @@ public class DataManager {
     public String getGpsStatus() {
         return mGpsHelper.getGpsStatus();
     }
-
     public void updateObd(String[] obdCall) {
         if(mIsInDrive)
             mObdData.add(obdCall);
@@ -294,7 +293,7 @@ public class DataManager {
 
     public void setEliavPrefs() {
         mPrefsHelper.setObdType("MAF");
-        mPrefsHelper.setCarModel("Some car");
+        mPrefsHelper.setCarModel("Mitsubishi");
         mPrefsHelper.setVoiceFreq(5);
         mPrefsHelper.setEngineDisp(1999);
         mPrefsHelper.setFuelTypePosition(0);
