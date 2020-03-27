@@ -2,11 +2,13 @@ package com.gmail.liorsiag.ecodrive.model;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.gmail.liorsiag.ecodrive.R;
 import com.gmail.liorsiag.ecodrive.controller.DrivingController;
 import com.gmail.liorsiag.ecodrive.controller.MainController;
 import com.gmail.liorsiag.ecodrive.controller.PrefsController;
@@ -14,6 +16,9 @@ import com.gmail.liorsiag.ecodrive.controller.PrefsController;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
@@ -23,7 +28,7 @@ import java.util.Date;
 
 public class DataManager {
     private final static String TAG = "DataManager";
-    private final static boolean TESTMODE = false;
+    private final static boolean TESTMODE = true;
 
     //General Data
     @SuppressLint("StaticFieldLeak")
@@ -43,6 +48,7 @@ public class DataManager {
     private GpsHelper mGpsHelper;
     private ObdHelper mObdHelper;
     private PrefsHelper mPrefsHelper;
+    private CModelHelper mCModelHelper;
 
     //Drive related variables
     private volatile boolean mIsInDrive = false;
@@ -51,9 +57,12 @@ public class DataManager {
     private String mFileName;
     private Runnable mScreenUpdate;
     private Handler mHandler;
+    private boolean mUseVoice = false;
 
     //Most recent drive data
-    private double mSpeed = 0;
+    private double mlat = 0;
+    private double mlon = 0;
+    private int mSpeed = 0;
     private double mFuel = 0;
     private double mMaf = 0;
     private double mRpm = 0;
@@ -61,7 +70,7 @@ public class DataManager {
     private double mIat = 0;
 
     private double[] mFuelInfo;
-    private double mEngineDisp=0;
+    private double mEngineDisp = 0;
 
     //EcoDrive directory
     private File mDir;
@@ -80,6 +89,7 @@ public class DataManager {
         if (!mIsInitialized) {
             mPrefsHelper = new PrefsHelper(mContext);
             mGpsHelper = new GpsHelper(mContext);
+            mCModelHelper = new CModelHelper(mContext);
             mDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "EcoDrive");
             if (TESTMODE)
                 mObdHelper = new TObdHelper(c);
@@ -147,22 +157,25 @@ public class DataManager {
                 mGpsHelper.unregisterGpsListener();
     }
 
-    void updateGps(String[] gpsCall) {
+    void updateGps(GpsCall gpsCall) {
         if (mIsInDrive) {
-            mGpsData.add(gpsCall);
+            mGpsData.add(gpsCall.toStringArray());
+            mlat = gpsCall.lat;
+            mlon = gpsCall.lon;
         } else if (mMainC != null && mIsMainGpsListening)
-            mMainC.updateGps(gpsCall);
+            mMainC.updateGps(gpsCall.getLatLonString());
     }
 
     public String getGpsStatus() {
         return mGpsHelper.getGpsStatus();
     }
+
     public void updateObd(String[] obdCall) {
-        if(mIsInDrive)
+        if (mIsInDrive)
             mObdData.add(obdCall);
         switch (obdCall[1].charAt(0)) {
             case 'V': //Vehicle Speed
-                mSpeed = Double.parseDouble(obdCall[2]);
+                mSpeed = Integer.parseInt(obdCall[2]);
                 break;
             case 'F': //Fuel consumption rate
                 mFuel = Double.parseDouble(obdCall[2]);
@@ -217,6 +230,33 @@ public class DataManager {
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             if (!mDir.exists())
                 mDir.mkdirs();
+            File modelsDir = new File(mDir + File.separator + "Models");
+            if (!modelsDir.exists()) {
+                modelsDir.mkdirs();
+                copyResource(modelsDir,R.raw.from_home_cheapest_model);
+                copyResource(modelsDir,R.raw.to_home_cheapest_model);
+            }
+        }
+    }
+
+    public void copyResource(File dir,int resId){
+        InputStream in = mContext.getResources().openRawResource(resId);
+        String filename = mContext.getResources().getResourceEntryName(resId).replaceAll("_"," ")+".csv";
+        File f = new File(filename);
+        if(!f.exists()){
+            try {
+                OutputStream out = new FileOutputStream(new File(dir, filename));
+                byte[] buffer = new byte[1024];
+                int len;
+                while((len = in.read(buffer, 0, buffer.length)) != -1){
+                    out.write(buffer, 0, len);
+                }
+                in.close();
+                out.close();
+            } catch (FileNotFoundException ignored) {;
+            } catch (IOException e) {
+                Toast.makeText(mContext, "Model copy failed, copy manually", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -309,10 +349,10 @@ public class DataManager {
 
     private void createAndRegisterUpdateScreen() {
         mHandler = new Handler();
-        final int delay = getVoiceFreq()*1000;
-        mEngineDisp=getEngineDisp();
+        final int delay = getVoiceFreq() * 1000;
+        mEngineDisp = getEngineDisp();
         String obdType = getObdType();
-        mFuelInfo=mPrefsHelper.getFuelInfo();
+        mFuelInfo = mPrefsHelper.getFuelInfo();
         if (obdType.equals("FUEL")) {
             mScreenUpdate = new Runnable() {
                 @Override
@@ -320,6 +360,8 @@ public class DataManager {
                     mDrivingC.updateFuelConsumption(mFuel);
                     mDrivingC.updateActualSpeed(String.valueOf(mSpeed));
                     mHandler.postDelayed(this, delay);
+                    if (mUseVoice)
+                        mCModelHelper.speedUpdate(mlat, mlon, mSpeed);
                 }
             };
         } else if (obdType.equals("MAF")) {
@@ -330,6 +372,8 @@ public class DataManager {
                     mDrivingC.updateFuelConsumption(mFuel);
                     mDrivingC.updateActualSpeed(String.valueOf(mSpeed));
                     mHandler.postDelayed(this, delay);
+                    if (mUseVoice)
+                        mCModelHelper.speedUpdate(mlat, mlon, mSpeed);
                 }
             };
         } else {
@@ -341,6 +385,8 @@ public class DataManager {
                     mDrivingC.updateFuelConsumption(mFuel);
                     mDrivingC.updateActualSpeed(String.valueOf(mSpeed));
                     mHandler.postDelayed(this, delay);
+                    if (mUseVoice)
+                        mCModelHelper.speedUpdate(mlat, mlon, mSpeed);
                 }
             };
         }
@@ -350,10 +396,52 @@ public class DataManager {
     public void calcMaf() {
         double iat = mIat + 273.15;
         double imap = mRpm * mMap / iat / 2;
-        mMaf= ((imap / 60) * (0.8) * mEngineDisp * (28.97 / 8.314)) / 1000;
+        mMaf = ((imap / 60) * (0.8) * mEngineDisp * (28.97 / 8.314)) / 1000;
     }
 
     public void calcFuel() {
         mFuel = (mMaf * 3600) / (mFuelInfo[0] * mFuelInfo[1]);
+    }
+
+    public String[] loadModelsNames() {
+        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+            File modelsDir = new File(mDir + File.separator + "Models");
+            if (modelsDir.exists()) {
+                File[] files = modelsDir.listFiles();
+                if (files != null) {
+                    String[] modelNames = new String[files.length];
+                    for (int i = 0; i < files.length; i++) {
+                        modelNames[i] = files[i].getName().replace(".csv", "");
+                    }
+                    return modelNames;
+                }
+            }
+        }
+        return null;
+    }
+
+    public void prepareDrive(boolean useVoice, String fileName) {
+        Log.d(TAG, "prepareDrive: " + useVoice + " " + fileName);
+        mUseVoice = useVoice;
+        if (mUseVoice)
+            mCModelHelper.prepareDrive(mDir + File.separator + "Models" + File.separator + fileName + ".csv");
+    }
+
+    public void sayText(String text) {
+        if (mIsInDrive)
+            mDrivingC.sayText(text);
+    }
+
+    public void updateDesiredSpeed(String text, int color) {
+        if (mIsInDrive && mUseVoice) {
+            if (!text.startsWith("-"))
+                mDrivingC.updateDesiredSpeed(text, color);
+            else {
+                mUseVoice = false;
+                mDrivingC.emptyDesiredSpeed();
+                mDrivingC.sayText("Route ended, drive safely");
+            }
+
+        }
     }
 }

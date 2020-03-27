@@ -4,8 +4,11 @@ import android.Manifest;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.view.View.OnClickListener;
 
@@ -15,15 +18,19 @@ import androidx.core.app.ActivityCompat;
 import com.gmail.liorsiag.ecodrive.R;
 import com.gmail.liorsiag.ecodrive.controller.MainController;
 
+import java.util.Arrays;
+
 public final class MainActivity extends AppCompatActivity {
 
-    private final static String TAG="MainActivity";
+    private final static String TAG = "MainActivity";
 
     MainController mController;
 
-    TextView mGpsStatus,mObdStatus;
-    Button mStartDrive,mObdConnect,mPrefs;
+    TextView mGpsStatus, mObdStatus;
+    Button mStartDrive, mObdConnect, mPrefs;
     EditText mRouteName;
+    CheckBox mUseVoice;
+    Spinner mModels;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,14 +43,17 @@ public final class MainActivity extends AppCompatActivity {
         registerListeners();
     }
 
-    protected void initializeVariables(){
-        mGpsStatus=findViewById(R.id.text_gps);
-        mStartDrive=findViewById(R.id.btn_start);
-        mObdConnect=findViewById(R.id.btn_obd);
-        mObdStatus=findViewById(R.id.text_obd);
-        mPrefs=findViewById(R.id.btn_settings);
-        mRouteName=findViewById(R.id.editt_route_name);
+    protected void initializeVariables() {
+        mGpsStatus = findViewById(R.id.text_gps);
+        mStartDrive = findViewById(R.id.btn_start);
+        mObdConnect = findViewById(R.id.btn_obd);
+        mObdStatus = findViewById(R.id.text_obd);
+        mPrefs = findViewById(R.id.btn_settings);
+        mRouteName = findViewById(R.id.editt_route_name);
+        mUseVoice = findViewById(R.id.checkBox_voice);
+        mModels = findViewById(R.id.spinner_routeFiles);
         mController.updateRouteName();
+        mController.updateUseVoiceAndModels();
     }
 
     @Override
@@ -81,7 +91,8 @@ public final class MainActivity extends AppCompatActivity {
         mStartDrive.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                mController.startDrive();
+                mController.startDrive(mUseVoice.isChecked(),
+                        mModels.getSelectedItem() != null ? mModels.getSelectedItem().toString() : null);
             }
         });
         //start drive button - save the route name at this point
@@ -90,7 +101,7 @@ public final class MainActivity extends AppCompatActivity {
         mObdConnect.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(mController.isObdConnected())
+                if (mController.isObdConnected())
                     mController.disconnectFromObd();
                 else
                     mController.connectToObd();
@@ -116,7 +127,7 @@ public final class MainActivity extends AppCompatActivity {
         mRouteName.setText(value);
     }
 
-    public String getRouteName(){
+    public String getRouteName() {
         return mRouteName.getText().toString();
     }
 
@@ -134,10 +145,13 @@ public final class MainActivity extends AppCompatActivity {
 
 
     public void setSpinnerEntries(String[] entries) {
-
+        Log.d(TAG, "setSpinnerEntries: " + Arrays.toString(entries));
+        ArrayAdapter<String> spinnerArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, entries);
+        mModels.setAdapter(spinnerArrayAdapter);
     }
 
     public void setUseVoiceStatus(boolean status) {
-
+        mUseVoice.setEnabled(status);
+        mUseVoice.setChecked(status);
     }
 }

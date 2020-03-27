@@ -35,9 +35,9 @@ public class MainController {
     //this controller needs an update view function
 
     //This method is called by the DataManager to update the current latlong of the phone
-    public void updateGps(String[] gpsCall) {
+    public void updateGps(String latlon) {
         if (mView != null)
-            mView.setGpsStatus(gpsCall[1] + "\n" + gpsCall[2]);
+            mView.setGpsStatus(latlon);
     }
 
     //This method is used to notify the DataManager that the main activity is now listening to GPS updates
@@ -56,14 +56,15 @@ public class MainController {
     }
 
     //Create a driving activity and end the main one
-    public void startDrive() {
-        //put this inside a dialog or somehting
+    public void startDrive(boolean useVoice,String fileName) {
+        //put this inside a dialog or something
         if(mDataManager.arePrefsSet()) {
             mView.getRouteName();
             if(!mView.getRouteName().isEmpty()){
                 mDataManager.saveRouteName(mView.getRouteName());
                 if(!mDataManager.getGpsStatus().equals("Off")&&mDataManager.isGpsActive())
                     if(mDataManager.isObdConnected()){
+                        mDataManager.prepareDrive(useVoice,fileName);
                         Intent intent = new Intent(mView, DrivingActivity.class);
                         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         mView.startActivity(intent);
@@ -132,5 +133,13 @@ public class MainController {
         String v=mDataManager.getRouteName();
         if(v!=null)
             mView.setRouteName(v);
+    }
+
+    public void updateUseVoiceAndModels(){
+        String[] names=mDataManager.loadModelsNames();
+        if(names!=null&&names.length!=0){
+            mView.setSpinnerEntries(names);
+            mView.setUseVoiceStatus(true);
+        }
     }
 }

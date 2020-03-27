@@ -39,4 +39,17 @@ public class DrivingController {
     public void updateFuelConsumption(double value) { //or double?
         mView.setFuelConsumption(String.format("%.3f", value));
     }
+
+    public void updateDesiredSpeed(String text,int color){
+        mView.setDesiredSpeed(text);
+        mView.setDesiredSpeedColor(color);
+    }
+
+    public void sayText(String text){
+        mView.sayText(text);
+    }
+
+    public void emptyDesiredSpeed(){
+        mView.emptyDesiredSpeed();
+    }
 }
